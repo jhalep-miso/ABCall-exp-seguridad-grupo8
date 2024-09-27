@@ -1,0 +1,17 @@
+# Ignorar la carpeta instance de la base de datos
+instance/
+instance/
+logs/*.log
+logs/backup
+# logs sample files
+!logs/service_monitor_20240906_184511.log
+!logs/service_restart_20240906_184519.log
+
+# Ignorar archivos y carpetas del ambiente virtual
+venv/
+.venv/
+.env/
+*.pyc
+__pycache__/
+
+/data
