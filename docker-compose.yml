@@ -1,16 +1,16 @@
 version: '3.8'
 
 services:
-  web:
-    build: .
+  comandos_factura:
+    volumes:
+      - ./comandos_factura/:/app/
+    build: ./comandos_factura
     command:
       - sh
       - -c
       - |
         ./wait-for-it.sh db:5432 -- alembic upgrade head
         flask run --host=0.0.0.0
-    volumes:
-      - .:/app
     ports:
       - "5000:5000"
     depends_on:
