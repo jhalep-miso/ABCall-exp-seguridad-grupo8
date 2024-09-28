@@ -20,6 +20,7 @@ def process_audit(old_data, new_data):
 
 
 def main():
+    print("Starting listener...")
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",

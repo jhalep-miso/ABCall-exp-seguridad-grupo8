@@ -16,6 +16,23 @@ services:
     depends_on:
       - db
 
+  verificador:
+    volumes:
+      - ./verificador/:/app/
+    build: ./verificador
+    command:
+      - sh
+      - -c
+      - |
+        ./wait-for-it.sh comandos_factura:5000 -- python --version
+        ls
+        python listener.py
+    depends_on:
+      - db
+      - comandos_factura
+    environment:
+      - PYTHONUNBUFFERED=1
+
   db:
     container_name: db
     image: postgres:13
