@@ -147,3 +147,7 @@ def generar_grafico():
 
     # Show the plot
     plt.show()
+
+
+if __name__ == '__main__':
+    generar_grafico()
