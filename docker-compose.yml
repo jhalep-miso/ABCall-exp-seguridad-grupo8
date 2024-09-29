@@ -1,6 +1,11 @@
 version: '3.8'
 
 services:
+  redis:
+    image: redis
+    volumes:
+      - ./data:/data
+
   comandos_factura:
     volumes:
       - ./comandos_factura/:/app/
@@ -16,11 +21,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    healthcheck:
-      test: curl --fail http://localhost:5000/ || exit 1
-      interval: 3s
-      timeout: 2s
-      retries: 5
 
   verificador:
     volumes:
@@ -33,9 +33,17 @@ services:
         python listener.py
     depends_on:
       comandos_factura:
-        condition: service_healthy
+        condition: service_started
+      redis:
+        condition: service_started
     environment:
       - PYTHONUNBUFFERED=1
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
 
   db:
     container_name: db
@@ -51,3 +59,11 @@ services:
       interval: 3s
       timeout: 2s
       retries: 5
+
+  log_integridad:
+    volumes:
+      - ./logs/:/logs
+    build: ./log_integridad
+    command: celery -A tasks worker --loglevel=info -Q integrity_log
+    depends_on:
+      - redis
