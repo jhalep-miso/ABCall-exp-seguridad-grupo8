@@ -1,3 +1,6 @@
+import datetime
+import logging
+
 from flask import Blueprint, request, jsonify, Flask
 import requests
 from functools import wraps
@@ -29,14 +32,9 @@ def token_required(f):
 
 
 
-@gateway_bp.route('/protected', methods=['GET'])
-@token_required
-def protected_route():
-    return jsonify({"message": "This is a protected route"}), 200
-
 
 # Rutas del API Gateway
-@gateway_bp.route('/')
+@gateway_bp.route('/facturas/verificar', methods=['GET'])
 def hello_world():
     response = requests.get(f"{FACTURAS_SERVICE_URL}/")
     return response.json(), response.status_code
@@ -49,7 +47,14 @@ def crear_factura(user_id):
 
     data['usuario_id'] = user_id
 
-    response = requests.post(f"{FACTURAS_SERVICE_URL}/facturas", json=data)
+    service_token = generate_service_token(user_id)
+
+    headers = {
+        'Authorization': f'Bearer {service_token}',
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.post(f"{FACTURAS_SERVICE_URL}/facturas", json=data, headers=headers)
     return response.json(), response.status_code
 
 
@@ -61,8 +66,43 @@ def actualizar_factura(user_id, factura_id):
 
     data['usuario_id'] = user_id
 
-    response = requests.put(f"{FACTURAS_SERVICE_URL}/facturas/{factura_id}", json=data)
+    service_token = generate_service_token(user_id)
+
+    headers = {
+        'Authorization': f'Bearer {service_token}',
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.put(f"{FACTURAS_SERVICE_URL}/facturas/{factura_id}", json=data, headers=headers)
     return response.json(), response.status_code
 
 
+@gateway_bp.route('/mis-facturas', methods=['GET'])
+@token_required
+def obtener_mis_facturas(user_id):
+    service_token = generate_service_token(user_id)
+
+    headers = {
+        'Authorization': f'Bearer {service_token}',
+        'Content-Type': 'application/json'
+    }
+
+    logging.info(f"Enviando solicitud al microservicio de facturación con headers: {headers}")
+
+    try:
+        response = requests.get(f"{FACTURAS_SERVICE_URL}/facturas/mis-facturas", headers=headers)
+        logging.info(f"Respuesta del microservicio: {response.status_code}, {response.text}")
+        return response.json(), response.status_code
+    except Exception as e:
+        logging.error(f"Error al comunicarse con el microservicio: {e}")
+        return jsonify({"message": "Error interno al conectar con el microservicio"}), 500
+
+
+def generate_service_token(user_id):
+    service_token = jwt.encode({
+        'user_id': user_id,
+        'service': 'api_gateway',
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
+    }, 'aP9fG7kH1jL3mN6pQ2rT8vX4zY5dE1wR9sU0oK7vZ3lF6qB', algorithm="HS256")
+    return service_token
 
