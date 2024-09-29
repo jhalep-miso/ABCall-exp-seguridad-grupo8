@@ -16,7 +16,7 @@ logger.setLevel(logging.INFO)
 
 timezone = pytz.timezone(TIME_ZONE)
 facturas_url = 'http://localhost:5053/facturas'
-auth_url = 'http://localhost:5002/auth'
+auth_url = 'http://localhost:5053/auth'
 
 
 class CustomFormatter(logging.Formatter):
