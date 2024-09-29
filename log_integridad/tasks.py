@@ -46,5 +46,5 @@ def notify_integrity_check(
 
     execution_time_str = execution_time.strftime('%Y-%m-%dT%H:%M:%S.%f')
     logger.info(
-        f"Factura update audit - factura_id {factura_id} - is_valid_checksum {is_valid_checksum} - db_user {db_user} - db_user_ip {db_user_ip} - execution_time {execution_time_str}"
+        f"Factura update audit {audit_id} - factura_id {factura_id} - is_valid_checksum {is_valid_checksum} - db_user {db_user} - db_user_ip {db_user_ip} - execution_time {execution_time_str}"
     )

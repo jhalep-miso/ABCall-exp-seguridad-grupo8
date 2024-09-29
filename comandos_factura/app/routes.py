@@ -27,7 +27,7 @@ def crear_factura():
     factura.checksum = factura.calcular_checksum()
     db.session.add(factura)
     db.session.commit()
-    return f'Factura creada {factura.id}'
+    return {'id': factura.id, 'checksum': factura.checksum}, 201
 
 
 @app.route('/facturas/<int:factura_id>', methods=['PUT'])
@@ -41,4 +41,18 @@ def actualizar_factura(factura_id):
     factura.estado = data.get('estado', factura.estado)
     factura.checksum = factura.calcular_checksum()
     db.session.commit()
-    return f'Factura actualizada {factura.id}'
+    return {'id': factura.id, 'checksum': factura.checksum}, 200
+
+
+# endpoint sintético para actualizar una factura sin calcular el checksum
+@app.route('/facturas/<int:factura_id>/no-checksum', methods=['PUT'])
+def actualizar_factura_no_checksum(factura_id):
+    data = request.json
+    factura = Factura.query.get_or_404(factura_id)
+    factura.usuario_id = data.get('usuario_id', factura.usuario_id)
+    factura.nombre = data.get('nombre', factura.nombre)
+    factura.monto = data.get('monto', factura.monto)
+    factura.detalle = data.get('detalle', factura.detalle)
+    factura.estado = data.get('estado', factura.estado)
+    db.session.commit()
+    return {'id': factura.id}, 200
