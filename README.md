@@ -83,3 +83,94 @@ docker-compose down
 ### Solución de Problemas
 
 - Si tienes problemas con puertos ya utilizados, puedes modificarlos en el archivo `docker-compose.yml`
+
+
+## Autenticación y Autorización
+
+El sistema implementa autenticación mediante JWT para usuarios y servicios. Aquí te mostramos cómo interactuar con los microservicios usando autenticación:
+
+### Registrar un usuario
+
+```sh
+curl --location 'http://localhost:5002/auth/register' \
+--header 'Content-Type: application/json' \
+--data '{
+  "username": "newuser",
+  "password": "newpassword"
+}'
+```
+
+### Hacer login de usuario
+
+```sh
+curl --location 'http://localhost:5002/auth/login' \
+--header 'Content-Type: application/json' \
+--data '{
+  "username": "newuser",
+  "password": "newpassword"
+}'
+```
+
+### Intentar crear una factura sin el token (esperado: error)
+
+```sh
+curl --location 'http://127.0.0.1:5051/facturas' \
+--header 'Authorization: Bearer 1234' \
+--header 'Content-Type: application/json' \
+--data '{
+  "usuario_id": 1,
+  "nombre": "Factura de prueba",
+  "monto": 100.50,
+  "detalle": "Detalles de la factura de prueba"
+}'
+
+```
+Respuesta esperada:
+
+```json
+{
+    "message": "Token no valido - No ingresar directamente al servicio"
+}
+```
+
+### Crear Factura con el token correcto
+
+Una vez hayas hecho login y obtenido el token, usa ese token para crear una factura:
+
+```sh
+curl --location 'http://localhost:5053/facturas' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer <tu_token_jwt>' \
+--data '{
+  "usuario_id": 1,
+  "nombre": "Factura de prueba",
+  "monto": 100.50,
+  "detalle": "Detalles de la factura de prueba"
+}'
+```
+
+### Consultar todas las facturas del usuario autenticado
+
+```sh
+curl --location 'http://localhost:5053/mis-facturas' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer <tu_token_jwt>'
+```
+
+Validación:
+
+El sistema debe devolver solo las facturas asociadas al usuario autenticado.
+
+```json
+{
+  "facturas": [
+    {
+      "id": 1,
+      "nombre": "Factura de prueba",
+      "monto": 100.50,
+      "detalle": "Detalles de la factura de prueba",
+      "estado": "pendiente"
+    }
+  ]
+}
+```
