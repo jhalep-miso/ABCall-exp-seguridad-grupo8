@@ -4,6 +4,9 @@ import random
 import logging
 import pytz
 import datetime
+import time
+
+from plot import generar_grafico
 
 fake = Faker()
 
@@ -80,13 +83,22 @@ def actualizar_factura(factura_id, checksum_ok=True):
 
 
 def main():
-    factura_ids = crear_facturas(100)
-    for factura_id in factura_ids:
+    cantidad_facturas = 4
+    cantidad_modificaciones = 200
+    factura_ids = crear_facturas(cantidad_facturas)
+    for _ in range(cantidad_modificaciones):
+        factura_id = random.choice(factura_ids)
         with_checksum_ok = random.choice([True, False])
-        actualizar_factura(factura_id, checksum_ok=with_checksum_ok)
         logger.info(
-            f'Actualización Factura - factura_id {factura_id} - checksum {"OK" if with_checksum_ok else "incorrecto"}'
+            f'Actualización Factura - factura_id {factura_id} - checksum {with_checksum_ok}'
         )
+        actualizar_factura(factura_id, checksum_ok=with_checksum_ok)
+        time.sleep(0.1)
+
+    print('Simulación de modificaciones finalizada. Generando gráfico...')
+    # dar tiempo para que se generen los logs faltantes
+    time.sleep(3)
+    generar_grafico()
 
 
 if __name__ == "__main__":
