@@ -15,6 +15,8 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 timezone = pytz.timezone(TIME_ZONE)
+facturas_url = 'http://localhost:5053/facturas'
+auth_url = 'http://localhost:5002/auth'
 
 
 class CustomFormatter(logging.Formatter):
@@ -50,9 +52,31 @@ console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 
-def crear_facturas(cantidad=10):
-    url = 'http://localhost:5000/facturas'
+def crear_usuario(username, password):
+    data = {
+        'username': username,
+        'password': password,
+    }
+    response = requests.post(f'{auth_url}/register', json=data)
+    result = response.json()
+    print(result)
+    return data
+
+
+def login(username, password):
+    data = {
+        'username': username,
+        'password': password,
+    }
+    response = requests.post(f'{auth_url}/login', json=data)
+    result = response.json()
+    return result['token']
+
+
+def crear_facturas(token, cantidad=10):
     factura_ids = []
+
+    headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
     for i in range(cantidad):
         data = {
             'usuario_id': 1,
@@ -60,39 +84,46 @@ def crear_facturas(cantidad=10):
             'detalle': fake.sentence(),
             'monto': fake.random_int(min=1000, max=10000),
         }
-        response = requests.post(url, json=data)
+        response = requests.post(facturas_url, json=data, headers=headers)
         result = response.json()
-        factura_ids.append(result['id'])
-        print(f'Factura creada con id {result["id"]} y checksum {result["checksum"]}')
+        factura_id = result['factura_id']
+        factura_ids.append(factura_id)
+        print(f'Factura creada con id {factura_id}')
 
     return factura_ids
 
 
-def actualizar_factura(factura_id, checksum_ok=True):
+def actualizar_factura(token, factura_id, checksum_ok=True):
     url = (
-        f'http://localhost:5000/facturas/{factura_id}'
+        f'{facturas_url}/{factura_id}'
         if checksum_ok
-        else f'http://localhost:5000/facturas/{factura_id}/no-checksum'
+        else f'{facturas_url}/{factura_id}/no-checksum'
     )
     data = {
         'nombre': fake.word(),
         'detalle': fake.sentence(),
         'monto': fake.random_int(min=1000, max=10000),
     }
-    requests.put(url, json=data)
+    headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
+    requests.put(url, json=data, headers=headers)
 
 
 def main():
     cantidad_facturas = 4
     cantidad_modificaciones = 200
-    factura_ids = crear_facturas(cantidad_facturas)
-    for _ in range(cantidad_modificaciones):
+    username = fake.user_name()
+    password = fake.password()
+    crear_usuario(username, password)
+    token = login(username, password)
+
+    factura_ids = crear_facturas(token, cantidad_facturas)
+    for i in range(cantidad_modificaciones):
         factura_id = random.choice(factura_ids)
         with_checksum_ok = random.choice([True, False])
         logger.info(
-            f'Actualización Factura - factura_id {factura_id} - checksum {with_checksum_ok}'
+            f'Actualización Factura {i+1} - factura_id {factura_id} - checksum {with_checksum_ok}'
         )
-        actualizar_factura(factura_id, checksum_ok=with_checksum_ok)
+        actualizar_factura(token, factura_id, checksum_ok=with_checksum_ok)
         time.sleep(0.1)
 
     print('Simulación de modificaciones finalizada. Generando gráfico...')

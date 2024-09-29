@@ -76,6 +76,23 @@ def actualizar_factura(user_id, factura_id):
     response = requests.put(f"{FACTURAS_SERVICE_URL}/facturas/{factura_id}", json=data, headers=headers)
     return response.json(), response.status_code
 
+@gateway_bp.route('/facturas/<int:factura_id>/no-checksum', methods=['PUT'])
+@token_required
+def actualizar_factura_no_checksum(user_id, factura_id):
+    data = request.json
+
+    data['usuario_id'] = user_id
+
+    service_token = generate_service_token(user_id)
+
+    headers = {
+        'Authorization': f'Bearer {service_token}',
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.put(f"{FACTURAS_SERVICE_URL}/facturas/{factura_id}/no-checksum", json=data, headers=headers)
+    return response.json(), response.status_code
+
 
 @gateway_bp.route('/mis-facturas', methods=['GET'])
 @token_required

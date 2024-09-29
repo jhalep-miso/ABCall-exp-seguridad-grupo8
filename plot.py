@@ -12,11 +12,11 @@ def parse_simulacion_modificaciones_log(file_path):
     data = []
     with open(file_path, 'r') as file:
         for line in file:
+            if 'Actualización Factura' not in line:
+                continue
             timestamp_str, logType, action, factura_str, checksum_str = (
                 line.strip().split(' - ')
             )
-            if action != 'Actualización Factura' or logType != 'INFO':
-                continue
             timestamp = datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%S.%f%z')
             factura_id = int(factura_str.split(' ')[-1])
             checksum = checksum_str.split(' ')[-1]
