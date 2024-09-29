@@ -1,7 +1,7 @@
 from app import app, db
 from .models import Factura
 import datetime
-from flask import request
+from flask import request, jsonify
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -27,7 +27,8 @@ def crear_factura():
     factura.checksum = factura.calcular_checksum()
     db.session.add(factura)
     db.session.commit()
-    return f'Factura creada {factura.id}'
+    factura_id = factura.id
+    return jsonify({"message": "Factura creada", "factura_id": factura_id}), 201
 
 
 @app.route('/facturas/<int:factura_id>', methods=['PUT'])
