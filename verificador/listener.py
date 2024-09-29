@@ -41,8 +41,11 @@ def main():
             is_valid_checksum = process_audit(old_data, new_data)
             print(f"Factura audit {audit_id} checksum is valid: {is_valid_checksum}")
             cursor.execute(
-                "UPDATE factura_audits SET processed = TRUE WHERE id = %s",
-                (audit_id,),
+                "UPDATE factura_audits SET processed = TRUE, is_valid_checksum=%s WHERE id = %s",
+                (
+                    is_valid_checksum,
+                    audit_id,
+                ),
             )
             conn.commit()
 
