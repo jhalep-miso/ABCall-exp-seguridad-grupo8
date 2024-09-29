@@ -15,12 +15,14 @@ services:
       - -c
       - |
         alembic upgrade head
-        flask run --host=0.0.0.0
+        flask run --host=0.0.0.0 --port=5051
     ports:
-      - "5000:5000"
+      - "5051:5051"
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:postgres@db/postgres
 
   verificador:
     volumes:
@@ -67,3 +69,38 @@ services:
     command: celery -A tasks worker --loglevel=info -Q integrity_log
     depends_on:
       - redis
+
+  auth_service:
+    volumes:
+      - ./auth_service/:/app/
+    build: ./auth_service
+    command:
+      - sh
+      - -c
+      - |
+        flask run --host=0.0.0.0 --port=5002
+    ports:
+      - "5002:5002"
+    depends_on:
+      - db
+    environment:
+      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:postgres@db/postgres
+      - SECRET_KEY=your_secret_key
+      - FLASK_APP=app:create_app
+
+  api_gateway:
+    volumes:
+      - ./api_gateway/:/app/
+    build: ./api_gateway
+    command:
+      - sh
+      - -c
+      - |
+        flask run --host=0.0.0.0 --port=5053
+    ports:
+      - "5053:5053"
+    depends_on:
+      - comandos_factura
+    environment:
+      - FLASK_APP=app:create_app
+      - FACTURAS_SERVICE_URL=http://comandos_factura:5051
