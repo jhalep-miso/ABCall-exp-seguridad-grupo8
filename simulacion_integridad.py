@@ -1,8 +1,50 @@
 import requests
 from faker import Faker
 import random
+import logging
+import pytz
+import datetime
 
 fake = Faker()
+
+TIME_ZONE = 'UTC'
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+timezone = pytz.timezone(TIME_ZONE)
+
+
+class CustomFormatter(logging.Formatter):
+    def converter(self, timestamp):
+        dt = datetime.datetime.fromtimestamp(timestamp, tz=timezone)
+        return dt
+
+    def formatTime(self, record, datefmt=None):
+        dt = self.converter(record.created)
+        if datefmt:
+            s = dt.strftime(datefmt)
+        else:
+            try:
+                s = dt.isoformat(timespec='milliseconds')
+            except TypeError:
+                s = dt.isoformat()
+        return s
+
+
+formatter = CustomFormatter('%(asctime)s - %(levelname)s - %(message)s')
+
+# Crear un manejador de archivo para almacenar logs
+log_filename = datetime.datetime.now(timezone).strftime(
+    'logs/simulacion_modificaciones_%Y%m%d_%H%M%S.log'
+)
+file_handler = logging.FileHandler(log_filename)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+# Crear un manejador de consola para mostrar logs en terminal
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
 
 
 def crear_facturas(cantidad=10):
@@ -42,8 +84,8 @@ def main():
     for factura_id in factura_ids:
         with_checksum_ok = random.choice([True, False])
         actualizar_factura(factura_id, checksum_ok=with_checksum_ok)
-        print(
-            f'Factura {factura_id} actualizada con checksum {"OK" if with_checksum_ok else "incorrecto"}'
+        logger.info(
+            f'Actualización Factura - factura_id {factura_id} - checksum {"OK" if with_checksum_ok else "incorrecto"}'
         )
 
 

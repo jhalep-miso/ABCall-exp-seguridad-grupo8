@@ -7,7 +7,27 @@ TIME_ZONE = 'UTC'
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+timezone = pytz.timezone(TIME_ZONE)
+
+class CustomFormatter(logging.Formatter):
+    def converter(self, timestamp):
+        dt = datetime.datetime.fromtimestamp(timestamp, tz=timezone)
+        return dt
+
+    def formatTime(self, record, datefmt=None):
+        dt = self.converter(record.created)
+        if datefmt:
+            s = dt.strftime(datefmt)
+        else:
+            try:
+                s = dt.isoformat(timespec='milliseconds')
+            except TypeError:
+                s = dt.isoformat()
+        return s
+
+
+formatter = CustomFormatter('%(asctime)s - %(levelname)s - %(message)s')
 
 # Crear un manejador de archivo para almacenar logs
 log_filename = datetime.datetime.now(pytz.timezone(TIME_ZONE)).strftime(
