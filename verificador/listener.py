@@ -44,7 +44,7 @@ def main():
     while True:
         cursor.execute(
             '''
-            select id, old_data, new_data, db_user, db_user_ip, execution_time
+            select id, factura_id, old_data, new_data, db_user, db_user_ip, execution_time
             from factura_audits
             where processed = false
             '''
@@ -52,7 +52,15 @@ def main():
         factura_audits = cursor.fetchall()
 
         for audit in factura_audits:
-            audit_id, old_data, new_data, db_user, db_user_ip, execution_time = audit
+            (
+                audit_id,
+                factura_id,
+                old_data,
+                new_data,
+                db_user,
+                db_user_ip,
+                execution_time,
+            ) = audit
             is_valid_checksum = process_audit(old_data, new_data)
             cursor.execute(
                 "UPDATE factura_audits SET processed = TRUE, is_valid_checksum=%s WHERE id = %s",
@@ -64,6 +72,7 @@ def main():
             conn.commit()
             args = (
                 audit_id,
+                factura_id,
                 old_data,
                 new_data,
                 is_valid_checksum,

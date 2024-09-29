@@ -35,6 +35,7 @@ celery_logger.setLevel(logging.CRITICAL + 1)
 @celery_app.task(name='notify_integrity_check')
 def notify_integrity_check(
     audit_id,
+    factura_id,
     old_data,
     new_data,
     is_valid_checksum,
@@ -42,4 +43,8 @@ def notify_integrity_check(
     db_user_ip,
     execution_time,
 ):
-    logger.info(f"Factura audit {audit_id} checksum is valid: {is_valid_checksum}")
+
+    execution_time_str = execution_time.strftime('%Y-%m-%dT%H:%M:%S.%f')
+    logger.info(
+        f"Factura update audit - factura_id {factura_id} - is_valid_checksum {is_valid_checksum} - db_user {db_user} - db_user_ip {db_user_ip} - execution_time {execution_time_str}"
+    )
