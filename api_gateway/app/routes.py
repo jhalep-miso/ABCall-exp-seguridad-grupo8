@@ -11,6 +11,7 @@ gateway_bp = Blueprint('gateway', __name__)
 
 SECRET_KEY = 'a4f809f6b3e2fa6e1d9f4c79f40f6b2e8e6f9e4f4c3b6e8b9f5f4e9f8f4f6f3f'
 FACTURAS_SERVICE_URL = "http://comandos_factura:5051"
+AUTH_SERVICE_URL = "http://auth_service:5002"
 
 
 def token_required(f):
@@ -34,6 +35,19 @@ def token_required(f):
 
 
 # Rutas del API Gateway
+
+@gateway_bp.route('/auth/register', methods=['POST'])
+def register_user():
+    data = request.json
+    response = requests.post(f"{AUTH_SERVICE_URL}/auth/register", json=data)
+    return response.json(), response.status_code
+
+@gateway_bp.route('/auth/login', methods=['POST'])
+def login_user():
+    data = request.json
+    response = requests.post(f"{AUTH_SERVICE_URL}/auth/login", json=data)
+    return response.json(), response.status_code
+
 @gateway_bp.route('/facturas/verificar', methods=['GET'])
 def hello_world():
     response = requests.get(f"{FACTURAS_SERVICE_URL}/")
@@ -74,6 +88,23 @@ def actualizar_factura(user_id, factura_id):
     }
 
     response = requests.put(f"{FACTURAS_SERVICE_URL}/facturas/{factura_id}", json=data, headers=headers)
+    return response.json(), response.status_code
+
+@gateway_bp.route('/facturas/<int:factura_id>/no-checksum', methods=['PUT'])
+@token_required
+def actualizar_factura_no_checksum(user_id, factura_id):
+    data = request.json
+
+    data['usuario_id'] = user_id
+
+    service_token = generate_service_token(user_id)
+
+    headers = {
+        'Authorization': f'Bearer {service_token}',
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.put(f"{FACTURAS_SERVICE_URL}/facturas/{factura_id}/no-checksum", json=data, headers=headers)
     return response.json(), response.status_code
 
 

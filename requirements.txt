@@ -1,0 +1,5 @@
+requests==2.32.3
+faker==30.0.0
+pytz==2024.2
+pandas==2.2.3
+matplotlib==3.9.2
