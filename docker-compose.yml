@@ -1,6 +1,11 @@
 version: '3.8'
 
 services:
+  redis:
+    image: redis
+    volumes:
+      - ./data:/data
+
   comandos_factura:
     volumes:
       - ./comandos_factura/:/app/
@@ -34,6 +39,8 @@ services:
     depends_on:
       comandos_factura:
         condition: service_healthy
+      redis:
+        condition: service_started
     environment:
       - PYTHONUNBUFFERED=1
 
@@ -51,3 +58,11 @@ services:
       interval: 3s
       timeout: 2s
       retries: 5
+
+  log_integridad:
+    volumes:
+      - ./logs/:/logs
+    build: ./log_integridad
+    command: celery -A tasks worker --loglevel=info -Q integrity_log
+    depends_on:
+      - redis

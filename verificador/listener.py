@@ -2,6 +2,17 @@ import psycopg2
 import time
 import hashlib, secrets
 from datetime import datetime
+from celery import Celery
+
+celery_app = Celery(__name__, broker='redis://redis:6379/0')
+
+
+@celery_app.task(name='notify_integrity_check')
+def notify_integrity_check(*args):
+    pass
+
+
+integrity_log_queue = 'integrity_log'
 
 
 def verify_checksum(new_data):
@@ -32,14 +43,17 @@ def main():
 
     while True:
         cursor.execute(
-            "SELECT id, old_data, new_data FROM factura_audits WHERE processed = FALSE"
+            '''
+            select id, old_data, new_data, db_user, db_user_ip, execution_time
+            from factura_audits
+            where processed = false
+            '''
         )
         factura_audits = cursor.fetchall()
 
         for audit in factura_audits:
-            audit_id, old_data, new_data = audit
+            audit_id, old_data, new_data, db_user, db_user_ip, execution_time = audit
             is_valid_checksum = process_audit(old_data, new_data)
-            print(f"Factura audit {audit_id} checksum is valid: {is_valid_checksum}")
             cursor.execute(
                 "UPDATE factura_audits SET processed = TRUE, is_valid_checksum=%s WHERE id = %s",
                 (
@@ -48,6 +62,16 @@ def main():
                 ),
             )
             conn.commit()
+            args = (
+                audit_id,
+                old_data,
+                new_data,
+                is_valid_checksum,
+                db_user,
+                db_user_ip,
+                execution_time,
+            )
+            notify_integrity_check.apply_async(args=args, queue=integrity_log_queue)
 
         time.sleep(2)
 
